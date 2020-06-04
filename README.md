@@ -1,60 +1,88 @@
-# template-for-proposals
+# proposal-array-equality
+> Determining whether two arrays are equal.
 
-A repository template for ECMAScript proposals.
+__Author:__ [Hemanth HM](https://github.com/hemanth)
 
-## Before creating a proposal
+__Champions:__ [Jordan Harband](https://github.com/ljharb) & [Hemanth HM](https://github.com/hemanth)
 
-Please ensure the following:
-  1. You have read the [process document](https://tc39.github.io/process-document/)
-  1. You have reviewed the [existing proposals](https://github.com/tc39/proposals/)
-  1. You are aware that your proposal requires being a member of TC39, or locating a TC39 delegate to "champion" your proposal
+# Motivation:
 
-## Create your proposal repo
+Today we don't have straightforward way to check if two arrays are equal, it get more messier to check when they are deeply nested arrays.
 
-Follow these steps:
-  1.  Click the green ["use this template"](https://github.com/tc39/template-for-proposals/generate) button in the repo header. (Note: Do not fork this repo in GitHub's web interface, as that will later prevent transfer into the TC39 organization)
-  1.  Go to your repo settings “Options” page, under “GitHub Pages”, and set the source to the **master branch** (and click Save, if it does not autosave this setting)
-      1. check "Enforce HTTPS"
-      1. On "Options", under "Features", Ensure "Issues" is checked, and disable "Wiki", and "Projects" (unless you intend to use Projects)
-      1. Under "Merge button", check "automatically delete head branches"
-<!--
-  1.  Avoid merge conflicts with build process output files by running:
-      ```sh
-      git config --local --add merge.output.driver true
-      git config --local --add merge.output.driver true
-      ```
-  1.  Add a post-rewrite git hook to auto-rebuild the output on every commit:
-      ```sh
-      cp hooks/post-rewrite .git/hooks/post-rewrite
-      chmod +x .git/hooks/post-rewrite
-      ```
--->
-  1.  ["How to write a good explainer"][explainer] explains how to make a good first impression.
+# How is this currently handled?
 
-      > Each TC39 proposal should have a `README.md` file which explains the purpose
-      > of the proposal and its shape at a high level.
-      >
-      > ...
-      >
-      > The rest of this page can be used as a template ...
+There is no standard way to do it, there are few modules like [array-equal](https://www.npmjs.com/package/array-equal), [deep-equal](https://www.npmjs.com/package/deep-equal) with like 5M and 8M downloads per week respectively, which is subset of deep comparison.
 
-      Your explainer can point readers to the `index.html` generated from `spec.emu`
-      via markdown like
+Consider few examples:
 
-      ```markdown
-      You can browse the [ecmarkup output](https://ACCOUNT.github.io/PROJECT/)
-      or browse the [source](https://github.com/ACCOUNT/PROJECT/blob/master/spec.emu).
-      ```
+```js
+// Schema validation
+const equal = require('deep-equal');
 
-      where *ACCOUNT* and *PROJECT* are the first two path elements in your project's Github URL.
-      For example, for github.com/**tc39**/**template-for-proposals**, *ACCOUNT* is "tc39"
-      and *PROJECT* is "template-for-proposals".
+const expectedSchema = {
+  name: {
+    type: String,
+    required: true
+  },
+  score: {
+    type: Number,
+    default: 0
+  }
+};
 
+equal(schemaCall.args[0], expectedSchema);
 
-## Maintain your proposal repo
+```
 
-  1. Make your changes to `spec.emu` (ecmarkup uses HTML syntax, but is not HTML, so I strongly suggest not naming it ".html")
-  1. Any commit that makes meaningful changes to the spec, should run `npm run build` and commit the resulting output.
-  1. Whenever you update `ecmarkup`, run `npm run build` and commit any changes that come from that dependency.
-  
-  [explainer]: https://github.com/tc39/how-we-work/blob/master/explainer.md
+__node builtin:__
+
+```js
+// assert.deepStrictEqual(actual, expected[, message])
+
+deepStrictEqual([new Uint32Array([1, 2, 3, 4]).subarray(1, 3), new Uint32Array([2, 3])]);
+```
+
+```js
+// assert.deepEqual(actual, expected[, message])
+
+assert.deepEqual( tokenizer( "AD", "G", cldr ), [{
+		type: "G",
+		lexeme: "AD",
+		value: "1"
+	}] );
+```
+
+# Proposal:
+
+Have a `Array.prototype.equals` method, they might look like:
+
+```js
+[1,2,3].equals([1,2,3]) // evaluates to true
+
+[1,2,undefined].equals([1,2,3]) // evaluates to false.
+```
+
+```js
+[1, [2, [3,4]]].equals[1, [2, [3,4]]] // true
+```
+
+```js
+[{
+  foo: 'bar'
+}, {
+  foo: 'baz'
+}].equals[{
+    foo: 'bar'
+}] // false
+
+```
+
+__How are other langugaes handling this?__
+
+__Ruby:__ `array1.to_set == array2.to_set`
+
+__Python:__ `[1,[2,3]] == [1,[2,3]]`
+
+__Java:__ `java.util.Arrays.equal`
+
+__C#:__ `Enumerable.Except` or `SequenceEqual`
