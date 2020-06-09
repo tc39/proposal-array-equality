@@ -63,7 +63,7 @@ Have a `Array.prototype.equals` method, they might look like:
 ```
 
 ```js
-[1, [2, [3,4]]].equals[1, [2, [3,4]]] // true
+[1, [2, [3,4]]].equals([1, [2, [3,4]]]) // true
 ```
 
 ```js
